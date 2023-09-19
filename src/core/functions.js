@@ -50,7 +50,7 @@ export const selectBar = (areaOfSteel, options = {}) => {
         noOfBars = Math.ceil(areaOfSteel / areaOfBar)
     }
 
-    if (options.even_number_of_bars && noOfBars % 2 != 0) noOfBars++
+    if (options.even_number_of_bars && noOfBars % 2 !== 0) noOfBars++
     AsProvided = Math.ceil(((Math.PI) * (barSize ** 2) / 4) * noOfBars)
     return { AsProvided, noOfBars, barSize }
 }
