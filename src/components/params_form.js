@@ -55,8 +55,6 @@ export default function ParamsForm({ data, setData, projectID }) {
         ...clean_data,
         dropData: {
           ...clean_data.dropData,
-          l: Number(clean_data.dropData.l) / 1000,
-          b: Number(clean_data.dropData.b) / 1000,
           h: Number(clean_data.dropData.h) / 1000,
         }
       }
@@ -66,6 +64,7 @@ export default function ParamsForm({ data, setData, projectID }) {
         ...clean_data,
         headData: {
           ...clean_data.headData,
+          column_dimension: Number(clean_data.headData.column_dimension) / 1000,
           l: Number(clean_data.headData.l) / 1000,
           b: Number(clean_data.headData?.b) / 1000,
           h: Number(clean_data.headData.h) / 1000,
@@ -81,15 +80,13 @@ export default function ParamsForm({ data, setData, projectID }) {
   }
 
   const designSlab = (data) => {
-    console.log(data)
     let slab = new FlatSlab(data.l, data.b, data.h, data.Gk, data.Qk, data.fcu, data.fy, data.cover)
     if (data.dropData.drop) {
-      slab.add_drop(data.dropData.l, data.dropData.b, data.dropData.h)
+      slab.add_drop(data.dropData.h)
     }
     if (data.headData.head) {
-      slab.add_column_head(data.headData.type, data.headData.type.toLowerCase() === "c" ? data.headData.l : (data.headData.l, data.headData.b), data.headData.h, data.headData.flanged)
+      slab.add_column_head(data.headData.type, data.headData.type.toLowerCase() === "c" ? data.headData.l : (data.headData.l, data.headData.b), data.headData.h, data.headData.flanged, data.headData.column_dimension)
     }
-    console.log(slab)
     handleModalShow(slab)
   }
 
@@ -148,7 +145,7 @@ export default function ParamsForm({ data, setData, projectID }) {
                         <div className="col-sm-4">
                           <div className="form-group">
                             <label className="mb-1 small">Thickness (mm)</label>
-                            <input type="number" name="h" value={data.h} onChange={handleChange} className="form-control contact-form"
+                            <input type="number" name="h" min={125} value={data.h} onChange={handleChange} className="form-control contact-form"
                               placeholder="d" required />
                           </div>
                         </div>
@@ -199,6 +196,7 @@ export default function ParamsForm({ data, setData, projectID }) {
 
                     <div className="mb-4">
                       <h6 className="mb-3">Support Conditions</h6>
+
                       <div className="mb-3" style={{ borderBottom: "1px dashed var(--bs-border-color)" }}>
                         <div className="row mb-2">
                           <div className="col-lg-8">
@@ -215,20 +213,6 @@ export default function ParamsForm({ data, setData, projectID }) {
                           <div className="row mt-2 ms-4">
                             <div className="col-sm-4">
                               <div className="form-group">
-                                <label className="mb-1 small">Drop Length (mm)</label>
-                                <input type="number" name="l" value={data.dropData.l} onChange={handleDropDataChange} className="form-control contact-form"
-                                  placeholder="Length" required />
-                              </div>
-                            </div>
-                            <div className="col-sm-4">
-                              <div className="form-group">
-                                <label className="mb-1 small">Drop Width (mm)</label>
-                                <input type="number" name="b" value={data.dropData.b} onChange={handleDropDataChange} className="form-control contact-form"
-                                  placeholder="Width" required />
-                              </div>
-                            </div>
-                            <div className="col-sm-4">
-                              <div className="form-group">
                                 <label className="mb-1 small">Drop Depth (mm)</label>
                                 <input type="number" name="h" value={data.dropData.h} onChange={handleDropDataChange} className="form-control contact-form"
                                   placeholder="Height" required />
@@ -238,6 +222,7 @@ export default function ParamsForm({ data, setData, projectID }) {
                         </>}
 
                       </div>
+
                       <div className="mb-3" style={{ borderBottom: "1px dashed var(--bs-border-color)" }}>
                         <div className="row mb-2">
                           <div className="col-lg-8">
@@ -260,6 +245,13 @@ export default function ParamsForm({ data, setData, projectID }) {
                                     <option value="C">Circular</option>
                                     <option value="R">Rectangular</option>
                                   </select>
+                                </div>
+                              </div>
+                              <div className="col-sm-4">
+                                <div className="form-group">
+                                  <label className="mb-1 small">Column Dimension (mm)</label>
+                                  <input type="number" name="column_dimension" value={data.headData.column_dimension} onChange={handleHeadDataChange} className="form-control contact-form"
+                                    placeholder="Length" required />
                                 </div>
                               </div>
                             </div>

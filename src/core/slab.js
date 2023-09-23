@@ -1,21 +1,18 @@
 /* eslint-disable no-throw-literal */
 import { selectBar } from "./functions"
 
-console.log(selectBar)
-
 const DENSITY_OF_CONCRETE = 24
 const DEADLOAD_FACTOR = 1.4
 const LIVELOAD_FACTOR = 1.6
 
 class Drop {
-    constructor(l, b, h, slab) {
-        let dims = [l, b].sort()
-        this.l = l
-        this.b = b
-        this.h = h
-        this.lx = dims[0]
-        this.ly = dims[1]
+    constructor(h, slab) {
         this.slab = slab
+        this.l = slab.lx / 3
+        this.b = slab.ly / 3
+        this.h = h
+        this.lx = this.l
+        this.ly = this.b
     }
 
     get selfWeight() {
@@ -26,12 +23,14 @@ class Drop {
 class ColumnHead {
     static CIRCULAR = "C"
     static RECTANGULAR = "R"
-    constructor(type, dimension, depth = 1, flanged = false) {
+    constructor(type, dimension, depth, flanged = false, column_dimension, slab) {
         type = type.toUpperCase()
         if (![ColumnHead.CIRCULAR, ColumnHead.RECTANGULAR].includes(type)) throw `Column head type must be of the type "${ColumnHead.CIRCULAR}" or "${ColumnHead.RECTANGULAR}"`
         this.type = type
         this.d = depth
         this.flanged = flanged
+        this.column_dimension = column_dimension
+        this.slab = slab
         if (this.type === ColumnHead.CIRCULAR) {
             this.l = dimension
         } else if (this.type === ColumnHead.RECTANGULAR) {
@@ -44,14 +43,21 @@ class ColumnHead {
     }
 
     get hc() {
-        return this.l
+        let effectiveDiameter = this.calculateEffectiveDimension()
+        if ((this.slab.lx / 4) < effectiveDiameter) {
+            effectiveDiameter = this.slab.lx / 4
+        }
+        return effectiveDiameter
     }
 
-    calculateEffectiveHead(column_dimension, head_dimension, flanged = false) {
+    calculateEffectiveDimension() {
         let lh_o
+        let flanged = this.flanged
+        let head_dimension = this.l * 1000
+        let column_dimension = this.column_dimension * 1000
         let lh_max = column_dimension + 2 * (this.d - 40)
         if (flanged) {
-            lh_o = head_dimension - 2 * (40 / (this.d / ((head_dimension - column_dimension) / 2)))
+            lh_o = head_dimension - 2 * (40 / ((this.d * 1000) / ((head_dimension - column_dimension) / 2)))
         } else {
             lh_o = head_dimension
         }
@@ -59,10 +65,15 @@ class ColumnHead {
     }
 
     get perimeter() {
-        return Math.PI * this.hc
+        if (this.type === ColumnHead.CIRCULAR) {
+            return Math.PI * this.hc
+        } else {
+            return this.hc * this.hc
+        }
     }
 
 }
+
 class FlatSlab {
     static DIVISION_OF_MOMENTS_BETWEEN_STRIPS = {
         negativeMoments: {
@@ -88,15 +99,15 @@ class FlatSlab {
     }
 
 
-    add_drop(l, b, d) {
+    add_drop(d) {
         if (this.drop) throw "Drop panels already added."
-        this.drop = new Drop(l, b, d, this)
+        this.drop = new Drop(d, this)
         return this.drop
     }
 
     add_column_head(...args) {
         if (this.column_head) throw "Column head already added."
-        this.column_head = new ColumnHead(...args)
+        this.column_head = new ColumnHead(...args, this)
         return this.column_head
     }
 
@@ -129,11 +140,7 @@ class FlatSlab {
 
     get columnStripLength() {
         if (!this.drop) return this.lx / 2
-        if (this.drop.lx > this.lx / 3) {
-            return this.drop.lx
-        } else {
-            return undefined
-        }
+        return this.drop.lx
     }
 
     get middleStripLength() {
