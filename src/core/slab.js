@@ -23,7 +23,7 @@ class Drop {
 class ColumnHead {
     static CIRCULAR = "C"
     static RECTANGULAR = "R"
-    constructor(type, dimension, depth, flanged = false, column_dimension, slab) {
+    constructor(type, depth, flanged = false, column_dimension, slab) {
         type = type.toUpperCase()
         if (![ColumnHead.CIRCULAR, ColumnHead.RECTANGULAR].includes(type)) throw `Column head type must be of the type "${ColumnHead.CIRCULAR}" or "${ColumnHead.RECTANGULAR}"`
         this.type = type
@@ -31,15 +31,15 @@ class ColumnHead {
         this.flanged = flanged
         this.column_dimension = column_dimension
         this.slab = slab
-        if (this.type === ColumnHead.CIRCULAR) {
-            this.l = dimension
-        } else if (this.type === ColumnHead.RECTANGULAR) {
-            if (!Array.isArray(dimension)) throw "Rectangular Column head dimension must be an array."
-            this.l = dimension[0]
-            this.b = dimension[1]
-        } else {
-            throw "Column Head type not found"
-        }
+        // if (this.type === ColumnHead.CIRCULAR) {
+        //     this.l = dimension
+        // } else if (this.type === ColumnHead.RECTANGULAR) {
+        //     if (!Array.isArray(dimension)) throw "Rectangular Column head dimension must be an array."
+        //     this.l = dimension[0]
+        //     this.b = dimension[1]
+        // } else {
+        //     throw "Column Head type not found"
+        // }
     }
 
     get hc() {
@@ -53,7 +53,8 @@ class ColumnHead {
     calculateEffectiveDimension() {
         let lh_o
         let flanged = this.flanged
-        let head_dimension = this.l * 1000
+        // let head_dimension = this.l * 1000
+        let head_dimension = this.slab.lx / 3
         let column_dimension = this.column_dimension * 1000
         let lh_max = column_dimension + 2 * (this.d - 40)
         if (flanged) {
@@ -86,7 +87,22 @@ class FlatSlab {
         },
     }
 
-    constructor(l, b, h, dead_load = 0, live_load = 0, fcu = 25, fy = 460, cover = 25) {
+    static SLAB_CONDITIONS_MOMENT_FACTORS = {
+        IP: {
+            support: 0.086,
+            span: 0.063,
+        },
+        SSP: {
+            support: 0,
+            span: 0.086,
+        },
+        CP: {
+            support: 0.04,
+            span: 0.075,
+        },
+    }
+
+    constructor(l, b, h, dead_load = 0, live_load = 0, fcu = 25, fy = 460, cover = 25, condition = "IP") {
         let dims = [l, b].sort()
         this.lx = dims[0]
         this.ly = dims[1]
@@ -96,6 +112,11 @@ class FlatSlab {
         this.fcu = fcu
         this.fy = fy
         this.cover = cover
+        if (Object.keys(FlatSlab.SLAB_CONDITIONS_MOMENT_FACTORS).includes(condition)) {
+            this.condition = condition
+        } else {
+            throw "Condition not found"
+        }
     }
 
 
@@ -149,12 +170,14 @@ class FlatSlab {
 
     get positiveMoment() {
         // positive moment = 0.071FL KN m
-        return 0.071 * this.ultimateLoad * this.effectiveSpan
+        let coefficient = FlatSlab.SLAB_CONDITIONS_MOMENT_FACTORS[this.condition].span
+        return coefficient * this.ultimateLoad * this.effectiveSpan
     }
 
     get negativeMoment() {
         // negative moment = -0.055FL KN m
-        return 0.055 * this.ultimateLoad * this.effectiveSpan
+        let coefficient = FlatSlab.SLAB_CONDITIONS_MOMENT_FACTORS[this.condition].support
+        return coefficient * this.ultimateLoad * this.effectiveSpan
     }
 
     middleStripMomentFactor(division_factor) {

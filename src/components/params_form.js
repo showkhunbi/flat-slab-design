@@ -80,12 +80,12 @@ export default function ParamsForm({ data, setData, projectID }) {
   }
 
   const designSlab = (data) => {
-    let slab = new FlatSlab(data.l, data.b, data.h, data.Gk, data.Qk, data.fcu, data.fy, data.cover)
+    let slab = new FlatSlab(data.l, data.b, data.h, data.Gk, data.Qk, data.fcu, data.fy, data.cover, data.condition)
     if (data.dropData.drop) {
       slab.add_drop(data.dropData.h)
     }
     if (data.headData.head) {
-      slab.add_column_head(data.headData.type, data.headData.type.toLowerCase() === "c" ? data.headData.l : (data.headData.l, data.headData.b), data.headData.h, data.headData.flanged, data.headData.column_dimension)
+      slab.add_column_head(data.headData.type, data.headData.h, data.headData.flanged, data.headData.column_dimension)
     }
     handleModalShow(slab)
   }
@@ -127,6 +127,18 @@ export default function ParamsForm({ data, setData, projectID }) {
 
                     <div className="mb-4">
                       <h6 className="mb-3">Geometry and layout</h6>
+                      <div className="row mb-2">
+                        <div className="col-sm-6">
+                          <div className="form-group">
+                            <label className="mb-1 small">Slab/ Support Condition</label>
+                            <select name="condition" value={data.condition} onChange={handleChange} className="form-select contact-form">
+                              <option value="IP">Internal Panel</option>
+                              <option value="SSP">Simply Supported Panel</option>
+                              <option value="CP">Continuous Panel</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
                       <div className="row">
                         <div className="col-sm-4">
                           <div className="form-group">
@@ -254,35 +266,7 @@ export default function ParamsForm({ data, setData, projectID }) {
                                     placeholder="Length" required />
                                 </div>
                               </div>
-                            </div>
-
-                            <div className="row">
-                              {data.headData.type === "R" ? <>
-                                <div className="col-sm-4">
-                                  <div className="form-group">
-                                    <label className="mb-1 small">Head Length (mm)</label>
-                                    <input type="number" name="l" value={data.headData.l} onChange={handleHeadDataChange} className="form-control contact-form"
-                                      placeholder="Length" required />
-                                  </div>
-                                </div>
-                                <div className="col-sm-4">
-                                  <div className="form-group">
-                                    <label className="mb-1 small">Head Width (mm)</label>
-                                    <input type="number" name="b" value={data.headData.b} onChange={handleHeadDataChange} className="form-control contact-form"
-                                      placeholder="Width" required />
-                                  </div>
-                                </div>
-                              </> : <>
-                                <div className="col-sm-6">
-                                  <div className="form-group">
-                                    <label className="mb-1 small">Head Diameter (mm)</label>
-                                    <input type="number" name="l" value={data.headData.l} onChange={handleHeadDataChange} className="form-control contact-form"
-                                      placeholder="Diameter" required />
-                                  </div>
-                                </div>
-                              </>}
-
-                              <div className={`col-sm-${data.headData.type === "R" ? "4" : "6"}`}>
+                              <div className="col-sm-4">
                                 <div className="form-group">
                                   <label className="mb-1 small">Head Depth (mm)</label>
                                   <input type="number" name="h" value={data.headData.h} onChange={handleHeadDataChange} className="form-control contact-form"
@@ -292,7 +276,7 @@ export default function ParamsForm({ data, setData, projectID }) {
                             </div>
 
                             <div className="d-flex align-items-center mb-2">
-                              <label className="mb-1 form-label">Flanged</label>
+                              <label className="mb-1 form-label">Flared</label>
                               <div className="form-check ms-4">
                                 <input name="flanged" checked={data.headData.flanged && "checked"} onChange={handleHeadDataChange} className="form-check-input" type="checkbox" value={data.headData.flanged} />
                               </div>
@@ -339,7 +323,14 @@ const ResultModal = ({ show, handleClose, handleSave, slab }) => {
             <h6>Geometry and Dimensions</h6>
             <div><span className="fw-medium">Length:</span> {cleanFloat(slab.lx)} meters</div>
             <div><span className="fw-medium">Width:</span> {cleanFloat(slab.ly)} meters</div>
-            <div><span className="fw-medium">Thickness:</span> {cleanFloat(slab.h)} meters</div>
+            <div><span className="fw-medium mb-2">Thickness:</span> {cleanFloat(slab.h)} meters</div>
+            {slab.drop && <>
+              <div><span className="fw-medium">Drop Dimension:</span> <span className="text-info-emphasis">{cleanFloat(slab.drop.lx)} x {cleanFloat(slab.drop.ly)} x {cleanFloat(slab.drop.h)} meters</span></div>
+            </>}
+            {slab.column_head && <>
+              <div><span className="fw-medium">Effective Head Diameter:</span> <span className="text-info-emphasis">{cleanFloat(slab.column_head.hc)} meters</span></div>
+            </>}
+
           </div>
 
           <div className="mb-3">

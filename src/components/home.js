@@ -19,6 +19,7 @@ const Home = () => {
         fcu: 25,
         fy: 250,
         cover: 25,
+        condition: "IP",
         dropData: {
             drop: false,
         },
